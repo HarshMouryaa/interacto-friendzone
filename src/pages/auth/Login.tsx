@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { OTPInput } from "@/components/auth/OTPInput";
 import { CountdownTimer } from "@/components/auth/CountdownTimer";
 import { useToast } from "@/hooks/use-toast";
 import { loginUser, otpVerification } from "@/api/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Login() {
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
@@ -19,6 +21,7 @@ export function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -63,7 +66,7 @@ export function Login() {
           description: `OTP has been sent to your ${activeTab}`,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending OTP:", error);
       toast({
         title: "Error",
@@ -90,7 +93,7 @@ export function Login() {
           description: `A new OTP has been sent to your ${activeTab}`,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resending OTP:", error);
       toast({
         title: "Error",
@@ -110,11 +113,9 @@ export function Login() {
         otp
       });
       
-      if (response.data) {
-        // Store token in localStorage
-        if (response.data.token) {
-          localStorage.setItem("token", response.data.token);
-        }
+      if (response.data && response.data.token) {
+        // Use the login function from AuthContext
+        login(response.data.token);
         
         toast({
           title: "Login successful",
@@ -122,7 +123,7 @@ export function Login() {
         });
         navigate("/home");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error verifying OTP:", error);
       toast({
         title: "Error",
