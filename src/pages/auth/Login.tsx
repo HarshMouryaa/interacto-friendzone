@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OTPInput } from "@/components/auth/OTPInput";
 import { CountdownTimer } from "@/components/auth/CountdownTimer";
 import { useToast } from "@/hooks/use-toast";
+import { loginUser, otpVerification } from "@/api/api";
 
 export function Login() {
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
@@ -28,7 +28,7 @@ export function Login() {
     return /^\+?[0-9]{10,15}$/.test(phone);
   };
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     if (activeTab === "email" && !validateEmail(email)) {
       toast({
         title: "Invalid email",
@@ -49,42 +49,89 @@ export function Login() {
 
     setIsSubmitting(true);
     
-    // Simulate API call for sending OTP
-    setTimeout(() => {
-      setIsOtpSent(true);
-      setIsResendDisabled(true);
-      setIsSubmitting(false);
-      toast({
-        title: "OTP sent",
-        description: `OTP has been sent to your ${activeTab}`,
+    try {
+      // Send OTP request to backend
+      const response = await loginUser({
+        [activeTab]: activeTab === "email" ? email : phone,
       });
-    }, 1000);
+      
+      if (response.data) {
+        setIsOtpSent(true);
+        setIsResendDisabled(true);
+        toast({
+          title: "OTP sent",
+          description: `OTP has been sent to your ${activeTab}`,
+        });
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to send OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     setIsResendDisabled(true);
     
-    // Simulate API call for resending OTP
-    setTimeout(() => {
-      toast({
-        title: "OTP resent",
-        description: `A new OTP has been sent to your ${activeTab}`,
+    try {
+      // Resend OTP request to backend
+      const response = await loginUser({
+        [activeTab]: activeTab === "email" ? email : phone,
       });
-    }, 1000);
+      
+      if (response.data) {
+        toast({
+          title: "OTP resent",
+          description: `A new OTP has been sent to your ${activeTab}`,
+        });
+      }
+    } catch (error) {
+      console.error("Error resending OTP:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to resend OTP. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleVerifyOtp = (otp: string) => {
+  const handleVerifyOtp = async (otp: string) => {
     setIsSubmitting(true);
     
-    // Simulate API call for verifying OTP
-    setTimeout(() => {
-      setIsSubmitting(false);
-      toast({
-        title: "Login successful",
-        description: "You have been logged in successfully",
+    try {
+      // Verify OTP request to backend
+      const response = await otpVerification({
+        [activeTab]: activeTab === "email" ? email : phone,
+        otp
       });
-      navigate("/");
-    }, 1500);
+      
+      if (response.data) {
+        // Store token in localStorage
+        if (response.data.token) {
+          localStorage.setItem("token", response.data.token);
+        }
+        
+        toast({
+          title: "Login successful",
+          description: "You have been logged in successfully",
+        });
+        navigate("/home");
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Invalid OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTimerComplete = () => {
