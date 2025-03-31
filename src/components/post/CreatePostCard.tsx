@@ -1,17 +1,21 @@
 
 import { useState, useRef } from "react";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export function CreatePostCard() {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -26,6 +30,15 @@ export function CreatePostCard() {
 
   const handleSubmit = () => {
     if (!content.trim() && !image) return;
+    
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to create posts",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     // Simulate API call
@@ -34,6 +47,11 @@ export function CreatePostCard() {
       setImage(null);
       setIsSubmitting(false);
       console.log("Post created", { content, image });
+      
+      toast({
+        title: "Success",
+        description: "Your post has been created!",
+      });
     }, 1000);
   };
 

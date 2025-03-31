@@ -6,6 +6,7 @@ import { usePosts } from "@/services/PostsService";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 export function HomePage() {
   const { toast } = useToast();
@@ -79,7 +80,23 @@ export function HomePage() {
           <NotificationDropdown />
         </div>
       </div>
-      {isAuthenticated && <CreatePostCard />}
+      
+      {isAuthenticated ? (
+        <CreatePostCard />
+      ) : (
+        <div className="mb-6 p-4 bg-muted/30 rounded-lg border text-center">
+          <p className="mb-3">Sign in to share your thoughts and connect with friends</p>
+          <div className="flex justify-center gap-3">
+            <Button asChild variant="default" className="bg-social hover:bg-social-hover">
+              <Link to="/login">Login</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/signup">Sign Up</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <div className="space-y-4">
         {posts.map((post: PostProps) => (
           <PostCard key={post.id} {...post} />
