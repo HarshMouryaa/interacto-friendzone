@@ -1,80 +1,14 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChatList, ChatProps } from "@/components/messaging/ChatList";
 import { ChatWindow, MessageProps } from "@/components/messaging/ChatWindow";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useConversations } from "@/services/ConversationsService";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock chats data
-const chats: ChatProps[] = [
-  {
-    id: "chat1",
-    user: {
-      id: "user1",
-      name: "John Doe",
-      avatar: "/placeholder.svg",
-      online: true,
-    },
-    lastMessage: {
-      text: "Hey, how's it going?",
-      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-      read: true,
-      fromMe: false,
-    },
-    unreadCount: 0,
-  },
-  {
-    id: "chat2",
-    user: {
-      id: "user2",
-      name: "Jane Smith",
-      avatar: "/placeholder.svg",
-      online: false,
-    },
-    lastMessage: {
-      text: "Can you send me the document we discussed?",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-      read: true,
-      fromMe: true,
-    },
-    unreadCount: 0,
-  },
-  {
-    id: "chat3",
-    user: {
-      id: "user3",
-      name: "Alex Johnson",
-      avatar: "/placeholder.svg",
-      online: true,
-    },
-    lastMessage: {
-      text: "I just sent you a friend request",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      read: false,
-      fromMe: false,
-    },
-    unreadCount: 3,
-  },
-  {
-    id: "chat4",
-    user: {
-      id: "user4",
-      name: "Sam Williams",
-      avatar: "/placeholder.svg",
-      online: false,
-    },
-    lastMessage: {
-      text: "Thanks for the help!",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
-      read: true,
-      fromMe: false,
-    },
-    unreadCount: 0,
-  },
-];
-
-// Mock messages data
+// Mock messages data - would be replaced with real API data
 const messagesByChat: Record<string, { 
   messages: MessageProps[],
   user: {
@@ -272,6 +206,82 @@ const messagesByChat: Record<string, {
 export function MessagingPage() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { isAuthenticated, token } = useAuth();
+  const { toast } = useToast();
+  
+  // Parse the user ID from the token (JWT) - this is a simplified example
+  // In a real app, you might decode the JWT or get the user ID from a user context
+  const userId = isAuthenticated ? "current-user" : "";
+  
+  const { data: conversationsResponse, isLoading, error } = useConversations(userId);
+  
+  // Use either API data or fallback to mock data
+  const chats: ChatProps[] = conversationsResponse?.data || [
+    {
+      id: "chat1",
+      user: {
+        id: "user1",
+        name: "John Doe",
+        avatar: "/placeholder.svg",
+        online: true,
+      },
+      lastMessage: {
+        text: "Hey, how's it going?",
+        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
+        read: true,
+        fromMe: false,
+      },
+      unreadCount: 0,
+    },
+    {
+      id: "chat2",
+      user: {
+        id: "user2",
+        name: "Jane Smith",
+        avatar: "/placeholder.svg",
+        online: false,
+      },
+      lastMessage: {
+        text: "Can you send me the document we discussed?",
+        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+        read: true,
+        fromMe: true,
+      },
+      unreadCount: 0,
+    },
+    {
+      id: "chat3",
+      user: {
+        id: "user3",
+        name: "Alex Johnson",
+        avatar: "/placeholder.svg",
+        online: true,
+      },
+      lastMessage: {
+        text: "I just sent you a friend request",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+        read: false,
+        fromMe: false,
+      },
+      unreadCount: 3,
+    },
+    {
+      id: "chat4",
+      user: {
+        id: "user4",
+        name: "Sam Williams",
+        avatar: "/placeholder.svg",
+        online: false,
+      },
+      lastMessage: {
+        text: "Thanks for the help!",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
+        read: true,
+        fromMe: false,
+      },
+      unreadCount: 0,
+    },
+  ];
 
   const handleChatSelect = (chatId: string) => {
     setSelectedChatId(chatId);
@@ -280,75 +290,89 @@ export function MessagingPage() {
   const handleBackToList = () => {
     setSelectedChatId(null);
   };
+  
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load conversations. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Messages</h1>
-      <div className="rounded-lg border shadow-sm">
-        <div className="grid h-[600px] grid-cols-1 md:grid-cols-3">
-          {/* Chat list - show on mobile only if no chat is selected */}
-          {(!isMobile || !selectedChatId) && (
-            <div className="md:col-span-1">
-              <ChatList
-                chats={chats}
-                selectedChatId={selectedChatId ?? undefined}
-                onChatSelect={handleChatSelect}
-              />
-            </div>
-          )}
+      {isLoading ? (
+        <div className="flex justify-center py-10">Loading conversations...</div>
+      ) : (
+        <div className="rounded-lg border shadow-sm">
+          <div className="grid h-[600px] grid-cols-1 md:grid-cols-3">
+            {/* Chat list - show on mobile only if no chat is selected */}
+            {(!isMobile || !selectedChatId) && (
+              <div className="md:col-span-1">
+                <ChatList
+                  chats={chats}
+                  selectedChatId={selectedChatId ?? undefined}
+                  onChatSelect={handleChatSelect}
+                />
+              </div>
+            )}
 
-          {/* Chat window - show on mobile only if a chat is selected */}
-          {(!isMobile || selectedChatId) && (
-            <div className="md:col-span-2 md:border-l">
-              {selectedChatId ? (
-                <>
-                  {isMobile && (
-                    <div className="border-b p-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleBackToList}
-                        className="flex items-center gap-1"
+            {/* Chat window - show on mobile only if a chat is selected */}
+            {(!isMobile || selectedChatId) && (
+              <div className="md:col-span-2 md:border-l">
+                {selectedChatId ? (
+                  <>
+                    {isMobile && (
+                      <div className="border-b p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleBackToList}
+                          className="flex items-center gap-1"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Back
+                        </Button>
+                      </div>
+                    )}
+                    <ChatWindow
+                      chatId={selectedChatId}
+                      user={messagesByChat[selectedChatId]?.user}
+                      messages={messagesByChat[selectedChatId]?.messages || []}
+                    />
+                  </>
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center p-4 text-center">
+                    <div className="rounded-full bg-muted p-6">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-12 w-12 text-muted-foreground"
                       >
-                        <ChevronLeft className="h-4 w-4" />
-                        Back
-                      </Button>
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      </svg>
                     </div>
-                  )}
-                  <ChatWindow
-                    chatId={selectedChatId}
-                    user={messagesByChat[selectedChatId].user}
-                    messages={messagesByChat[selectedChatId].messages}
-                  />
-                </>
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-                  <div className="rounded-full bg-muted p-6">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-12 w-12 text-muted-foreground"
-                    >
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
+                    <h3 className="mt-4 text-lg font-medium">No chat selected</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Select a conversation from the list to start chatting
+                    </p>
                   </div>
-                  <h3 className="mt-4 text-lg font-medium">No chat selected</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Select a conversation from the list to start chatting
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
