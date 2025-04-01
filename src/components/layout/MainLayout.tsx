@@ -1,18 +1,11 @@
 
 import { Sidebar } from "./Sidebar";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/contexts/AuthContext";
 
 export function MainLayout() {
   const isMobile = useIsMobile();
-  const { isAuthenticated } = useAuth();
-
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
 
   return (
     <ThemeProvider>

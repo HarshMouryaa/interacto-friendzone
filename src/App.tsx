@@ -8,8 +8,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Pages
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { Login } from "./pages/auth/Login";
-import { Signup } from "./pages/auth/Signup";
 import { HomePage } from "./pages/home/HomePage";
 import { ProfilePage } from "./pages/profile/ProfilePage";
 import { MessagingPage } from "./pages/messaging/MessagingPage";
@@ -33,15 +31,13 @@ const App = () => (
           <Routes>
             {/* Redirect index to home page */}
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
             
             {/* Add home as direct route (not protected) */}
             <Route path="/home" element={<MainLayout />}>
               <Route index element={<HomePage />} />
             </Route>
             
-            {/* Protected routes with MainLayout */}
+            {/* All routes with MainLayout (not protected) */}
             <Route element={<MainLayout />}>
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/messages" element={<MessagingPage />} />
