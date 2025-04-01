@@ -31,3 +31,6 @@ export const deletePost = (postId) => API.delete(`/posts/deletePost/${postId}`);
 // Comment APIs
 export const getComments = (postId) => API.get(`/comment/${postId}`);
 export const createComment = (postId, commentData) => API.post(`/comment/${postId}`, commentData);
+
+// Conversation APIs
+export const getConversations = (userId) => API.get(`/conversations/${userId}`);
